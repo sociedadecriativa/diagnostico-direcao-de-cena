@@ -22,7 +22,7 @@ function isValidPhone(phone: string): boolean {
 }
 
 export function RegistrationScreen() {
-  const { userData, setUserData, setCurrentStep } = useApp();
+  const { userData, setUserData, setCurrentStep, saveLeadToSupabase } = useApp();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
@@ -47,7 +47,7 @@ export function RegistrationScreen() {
       case "name":
         newErrors.name =
           !userData.name.trim()
-            ? "Nome Ã© obrigatÃ³rio"
+            ? "Nome é obrigatório"
             : userData.name.trim().length < 2
             ? "Nome muito curto"
             : "";
@@ -55,17 +55,17 @@ export function RegistrationScreen() {
       case "whatsapp":
         newErrors.whatsapp =
           !userData.whatsapp
-            ? "WhatsApp Ã© obrigatÃ³rio"
+            ? "WhatsApp é obrigatório"
             : !isValidPhone(userData.whatsapp)
-            ? "NÃºmero invÃ¡lido"
+            ? "Número inválido"
             : "";
         break;
       case "email":
         newErrors.email =
           !userData.email
-            ? "E-mail Ã© obrigatÃ³rio"
+            ? "E-mail é obrigatório"
             : !isValidEmail(userData.email)
-            ? "E-mail invÃ¡lido"
+            ? "E-mail inválido"
             : "";
         break;
     }
@@ -83,9 +83,13 @@ export function RegistrationScreen() {
     return isValid;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateAll()) setCurrentStep(3);
+    if (validateAll()) {
+      // Save lead to Supabase (non-blocking — funnel continues regardless)
+      saveLeadToSupabase().catch(() => null);
+      setCurrentStep(3);
+    }
   };
 
   const isFormValid =
@@ -103,10 +107,10 @@ export function RegistrationScreen() {
             Quase pronto
           </p>
           <h1 className="font-display text-3xl md:text-5xl text-foreground tracking-wider mb-4">
-            SEU DIAGNÃSTICO<br />ESTÃ PRONTO.
+            SEU DIAGNÓSTICO<br />ESTÁ PRONTO.
           </h1>
           <p className="font-body text-base text-muted-foreground max-w-sm mx-auto leading-relaxed">
-            Para revelar o resultado, preciso de trÃªs dados. Sem spam. JoÃ£o Paulo lÃª pessoalmente â e pode entrar em contato se fizer sentido.
+            Para revelar o resultado, preciso de três dados. Sem spam. João Paulo lê pessoalmente — e pode entrar em contato se fizer sentido.
           </p>
         </div>
 
@@ -125,7 +129,7 @@ export function RegistrationScreen() {
                 value={userData.name}
                 onChange={(e) => handleChange("name", e.target.value)}
                 onBlur={() => handleBlur("name")}
-                placeholder="Como vocÃª prefere ser chamado"
+                placeholder="Como você prefere ser chamado"
                 className={`w-full px-4 py-3.5 bg-card border font-body text-base text-foreground
                   placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-gold focus:border-transparent
                   transition-colors ${touched.name && errors.name ? "border-red-700" : "border-border-subtle"}`}
@@ -190,13 +194,13 @@ export function RegistrationScreen() {
                   : "bg-muted text-muted-foreground cursor-not-allowed"
                 }`}
             >
-              VER MEU DIAGNÃSTICO â
+              VER MEU DIAGNÓSTICO →
             </button>
           </div>
 
           <p className="mt-5 text-center text-xs text-muted-foreground font-body leading-relaxed">
-            Seus dados sÃ£o usados apenas para personalizar o diagnÃ³stico<br />
-            e para que JoÃ£o Paulo possa entrar em contato se fizer sentido.
+            Seus dados são usados apenas para personalizar o diagnóstico<br />
+            e para que João Paulo possa entrar em contato se fizer sentido.
           </p>
         </form>
 
