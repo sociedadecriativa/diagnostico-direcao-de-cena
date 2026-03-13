@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { DiagnosisType } from "../data/quizData";
+import { supabase } from "../lib/supabase";
 
 export type PackageType = "analise" | "analise-implementacao" | null;
 export type ThemeMode = "dark" | "light";
@@ -36,6 +37,7 @@ interface AppState {
   briefingData: BriefingData;
   scheduledDateTime: string;
   themeMode: ThemeMode;
+  leadId: string | null;
 }
 
 interface AppContextType extends AppState {
@@ -48,6 +50,15 @@ interface AppContextType extends AppState {
   setScheduledDateTime: (datetime: string) => void;
   setThemeMode: (mode: ThemeMode) => void;
   resetApp: () => void;
+  saveLeadToSupabase: () => Promise<string | null>;
+  updateLeadDiagnosis: (
+    leadId: string,
+    diagnosisType: string,
+    pkg: PackageType,
+    answers: Record<number, string>
+  ) => Promise<void>;
+  saveBriefingToSupabase: (leadId: string) => Promise<void>;
+  saveAppointmentToSupabase: (leadId: string, datetime: string) => Promise<void>;
 }
 
 const initialState: AppState = {
@@ -78,6 +89,7 @@ const initialState: AppState = {
   },
   scheduledDateTime: "",
   themeMode: "dark",
+  leadId: null,
 };
 
 const STORAGE_KEY = "direcao-de-cena-state";
@@ -155,6 +167,98 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState(initialState);
   };
 
+  // ─── Supabase helpers ──────────────────────────────────────────────────────
+
+  const saveLeadToSupabase = async (): Promise<string | null> => {
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase
+        .from("leads")
+        .insert({
+          name: state.userData.name,
+          whatsapp: state.userData.whatsapp || null,
+          email: state.userData.email || null,
+          instagram: state.userData.instagram || null,
+        })
+        .select("id")
+        .single();
+      if (error) {
+        console.error("[supabase] save lead:", error.message);
+        return null;
+      }
+      const id = (data as { id: string }).id;
+      setState((prev) => ({ ...prev, leadId: id }));
+      return id;
+    } catch (e) {
+      console.error("[supabase] save lead exception:", e);
+      return null;
+    }
+  };
+
+  const updateLeadDiagnosis = async (
+    leadId: string,
+    diagnosisType: string,
+    pkg: PackageType,
+    answers: Record<number, string>
+  ): Promise<void> => {
+    if (!supabase || !leadId) return;
+    try {
+      const { error } = await supabase
+        .from("leads")
+        .update({
+          diagnosis_type: diagnosisType,
+          selected_package: pkg,
+          quiz_answers: answers,
+        })
+        .eq("id", leadId);
+      if (error) console.error("[supabase] update diagnosis:", error.message);
+    } catch (e) {
+      console.error("[supabase] update diagnosis exception:", e);
+    }
+  };
+
+  const saveBriefingToSupabase = async (leadId: string): Promise<void> => {
+    if (!supabase || !leadId) return;
+    try {
+      const { error } = await supabase.from("briefings").insert({
+        lead_id: leadId,
+        project_description: state.briefingData.projectDescription || null,
+        main_product: state.briefingData.mainProduct || null,
+        ideal_client: state.briefingData.idealClient || null,
+        client_benefit: state.briefingData.clientBenefit || null,
+        current_metrics: state.briefingData.currentMetrics || null,
+        best_content: state.briefingData.bestContent || null,
+        worst_content: state.briefingData.worstContent || null,
+        current_blocker: state.briefingData.currentBlocker || null,
+        ideal_result: state.briefingData.idealResult || null,
+        dont_touch: state.briefingData.dontTouch || null,
+        instagram_link: state.briefingData.instagramLink || null,
+        site_link: state.briefingData.siteLink || null,
+        additional_info: state.briefingData.additionalInfo || null,
+      });
+      if (error) console.error("[supabase] save briefing:", error.message);
+    } catch (e) {
+      console.error("[supabase] save briefing exception:", e);
+    }
+  };
+
+  const saveAppointmentToSupabase = async (
+    leadId: string,
+    datetime: string
+  ): Promise<void> => {
+    if (!supabase || !leadId) return;
+    try {
+      const { error } = await supabase.from("appointments").insert({
+        lead_id: leadId,
+        slot_datetime: datetime ? new Date(datetime).toISOString() : null,
+        status: "pending",
+      });
+      if (error) console.error("[supabase] save appointment:", error.message);
+    } catch (e) {
+      console.error("[supabase] save appointment exception:", e);
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -168,6 +272,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setScheduledDateTime,
         setThemeMode,
         resetApp,
+        saveLeadToSupabase,
+        updateLeadDiagnosis,
+        saveBriefingToSupabase,
+        saveAppointmentToSupabase,
       }}
     >
       {children}
