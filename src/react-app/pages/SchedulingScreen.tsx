@@ -75,7 +75,7 @@ Já preenchi o briefing completo. Aguardo sua confirmação!`;
                     Duração da sessão:
                   </p>
                   <p className="font-body text-base text-foreground mb-6">
-                    {selectedPackage === "analise-implementacao" ? "90 minutos" : "30 minutos"}
+                    {selectedPackage === "analise-implementacao" ? "90 minutos" : "60 minutos"}
                   </p>
 
                   <label className="block font-body text-sm text-muted-foreground mb-2">

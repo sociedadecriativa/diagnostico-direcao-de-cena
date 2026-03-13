@@ -178,32 +178,68 @@ export function BriefingScreen() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8 md:py-12">
-        {/* Header */}
-        <div className="text-center mb-8 md:mb-12">
-          <h1 className="font-display text-3xl md:text-5xl text-foreground tracking-wider mb-4">
-            BRIEFING
-          </h1>
-          <p className="font-body text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            Quanto mais você contar agora, mais cirúrgica vai ser a análise.
-            <br />
-            Não existe resposta errada — existe resposta honesta.
+
+        {/* Welcome message */}
+        <div className="max-w-2xl mx-auto mb-10 border border-gold/40 bg-gold/5 p-6 md:p-8">
+          <p className="font-body text-xs text-gold uppercase tracking-widest mb-3">
+            Compra confirmada ✓
+          </p>
+          <p className="font-body text-base text-foreground leading-relaxed mb-2">
+            Boa escolha, <strong>{userData.name}</strong>.
+          </p>
+          <p className="font-body text-sm text-muted-foreground leading-relaxed">
+            João Paulo lê o briefing antes de tocar no seu perfil. As respostas abaixo moldam o diagnóstico inteiro — não existe resposta certa ou errada, existe resposta honesta. Leva uns 10 minutos. Vale cada um.
           </p>
         </div>
 
-        {/* Pre-filled info */}
-        <div className="max-w-2xl mx-auto mb-8 p-4 bg-card border border-border-subtle rounded-sm">
-          <p className="font-body text-sm text-muted-foreground">
-            <span className="text-foreground">{userData.name}</span> · {userData.instagram}
-          </p>
+        {/* Progress indicator */}
+        <div className="max-w-2xl mx-auto mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <p className="font-body text-xs text-muted-foreground uppercase tracking-widest">
+              Progresso do briefing
+            </p>
+            <p className="font-body text-xs text-gold">
+              {sections.length} seções
+            </p>
+          </div>
+          <div className="flex gap-1">
+            {sections.map((s, i) => (
+              <div
+                key={i}
+                className="flex-1 h-1 transition-colors duration-300"
+                style={{
+                  backgroundColor: i <= Math.floor(
+                    Object.values(briefingData).filter(v => v && v.trim()).length /
+                    (sections.reduce((acc, sec) => acc + sec.fields.filter(f => f.required).length, 0) / sections.length)
+                  ) ? 'var(--color-gold, #C9A84C)' : 'var(--color-border, #2a2a2a)'
+                }}
+              />
+            ))}
+          </div>
+          <div className="flex justify-between mt-1">
+            {sections.map((s, i) => (
+              <p key={i} className="font-body text-xs text-muted-foreground/60" style={{ fontSize: '10px' }}>
+                {s.title.split(' ')[0]}
+              </p>
+            ))}
+          </div>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
           {sections.map((section, sectionIndex) => (
             <div key={section.title} className={sectionIndex > 0 ? "mt-12" : ""}>
-              <h2 className="font-display text-lg text-gold tracking-wider mb-6">
-                {section.title}
-              </h2>
+              <div className="flex items-center gap-3 mb-6">
+                <span className="font-display text-gold/50 text-sm">
+                  {String(sectionIndex + 1).padStart(2, '0')}
+                </span>
+                <h2 className="font-display text-lg text-gold tracking-wider">
+                  {section.title}
+                </h2>
+                <span className="font-body text-xs text-muted-foreground">
+                  de {sections.length}
+                </span>
+              </div>
               
               <div className="space-y-6">
                 {section.fields.map((field) => (
